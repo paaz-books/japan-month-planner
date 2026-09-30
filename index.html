@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Japan Month Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Shippori+Mincho:wght@600;700&display=swap">
+<style>
+/* Layout: one reading column. The priorities panel and the region × month table sit together as one card, settings directly on top of the table. */
+:root{
+  --bg:#f4f5f8; --surface:#ffffff; --surface-2:#eceff5; --ink:#18203a; --muted:#566076; --line:#d6dbe5;
+  --accent:#2b4380; --accent-ink:#ffffff; --ring:#b45309;
+  --q1:#f1f3f8; --q2:#dde3f0; --q3:#bfcae3; --q4:#8a9fcf; --q5:#3d5699; --q4-ink:#18203a; --q5-ink:#ffffff;
+  --p1:#f5e4dd; --p2:#faf1ed; --p4:#e4eaf6; --p5:#ccd6ee;
+  --font-display:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f131b; --surface:#161c27; --surface-2:#1e2635; --ink:#e6eaf2; --muted:#9ba5b7; --line:#2a3345;
+    --accent:#9fb6ec; --accent-ink:#0f131b; --ring:#f2b35a;
+    --q1:#19202d; --q2:#1f2a40; --q3:#28395d; --q4:#344f8c; --q5:#4d69b8; --q4-ink:#eef2fa; --q5-ink:#ffffff;
+    --p1:#3a2824; --p2:#2a2322; --p4:#222c43; --p5:#2c3b5f;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f131b; --surface:#161c27; --surface-2:#1e2635; --ink:#e6eaf2; --muted:#9ba5b7; --line:#2a3345;
+  --accent:#9fb6ec; --accent-ink:#0f131b; --ring:#f2b35a;
+  --q1:#19202d; --q2:#1f2a40; --q3:#28395d; --q4:#344f8c; --q5:#4d69b8; --q4-ink:#eef2fa; --q5-ink:#ffffff;
+  --p1:#3a2824; --p2:#2a2322; --p4:#222c43; --p5:#2c3b5f;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.page{max-width:1180px;margin:0 auto;padding-block:40px 72px;padding-inline:20px;display:grid;gap:40px}
+a{color:var(--accent);text-underline-offset:3px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2{font-family:var(--font-display);font-weight:700;line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);letter-spacing:.01em}
+h2{font-size:1.45rem}
+h4{margin:0 0 6px;font-size:.95rem}
+p{margin:0}
+
+.intro{display:grid;gap:12px;max-width:68ch}
+.kicker{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.lede{font-size:1.1rem;color:var(--muted)}
+
+/* planner card: settings on top of the table */
+.planner{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.controls{padding:20px 22px 16px;display:grid;gap:14px;border-bottom:1px solid var(--line)}
+.controls-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px}
+.presets{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.plabel{font-size:.8rem;color:var(--muted);margin-right:4px}
+.preset{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:.85rem;cursor:pointer}
+.preset:hover{border-color:var(--accent)}
+.preset.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.axes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 16px}
+.axis{border:0;margin:0;padding:0;min-width:0}
+.axis legend{font-weight:600;font-size:.92rem;margin-bottom:6px;padding:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface-2)}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;padding:6px 11px;font-size:.84rem;color:var(--muted);border-right:1px solid var(--line)}
+.seg label:last-child span{border-right:0}
+.seg input:checked + span{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:-2px}
+.hint{font-size:.82rem;color:var(--muted)}
+.status{padding:10px 22px;font-size:.88rem;color:var(--muted);background:var(--surface-2);display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.linkbtn{border:0;background:none;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:0;font-size:.88rem}
+
+/* the table */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:900px;font-variant-numeric:tabular-nums}
+table.grid caption{caption-side:bottom;text-align:left;padding:12px 22px 18px;font-size:.84rem;color:var(--muted)}
+table.grid th,table.grid td{padding:0;border-bottom:1px solid var(--line)}
+table.grid thead th{font-size:.8rem;font-weight:600;color:var(--muted);text-align:center;padding:8px 2px;background:var(--surface)}
+table.grid thead th.rcol,table.grid thead th.best{text-align:left;padding-left:14px}
+.mbtn{border:0;background:none;padding:4px 6px;border-radius:6px;cursor:pointer;color:var(--muted);font-weight:600;font-size:.8rem}
+.mbtn:hover{background:var(--surface-2);color:var(--ink)}
+th.sorted .mbtn{background:var(--accent);color:var(--accent-ink)}
+table.grid tbody th{position:sticky;left:0;z-index:1;background:var(--surface);text-align:left;min-width:170px;border-right:1px solid var(--line)}
+.rbtn{display:flex;flex-direction:column;align-items:flex-start;gap:0;width:100%;border:0;background:none;text-align:left;padding:8px 14px;cursor:pointer}
+.rname{font-weight:600;font-size:.95rem}
+.rname::after{content:" ▸";color:var(--muted);font-size:.75rem}
+tr.open .rname::after{content:" ▾"}
+.rsub{font-size:.74rem;color:var(--muted)}
+.rbtn:hover .rname{color:var(--accent)}
+td.c{text-align:center;font-size:.92rem;min-width:52px;height:46px}
+td.q1{background:var(--q1)} td.q2{background:var(--q2)} td.q3{background:var(--q3)}
+td.q4{background:var(--q4);color:var(--q4-ink)} td.q5{background:var(--q5);color:var(--q5-ink);font-weight:600}
+td.top{box-shadow:inset 0 0 0 2px var(--ring)}
+td.best{padding:0 14px;font-size:.84rem;white-space:nowrap;color:var(--ink)}
+tr.detail > td{background:var(--surface-2);padding:0}
+.detail-body{padding:18px 22px 22px;display:grid;gap:16px;position:sticky;left:0;max-width:min(100vw - 40px,1140px)}
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.dtable{overflow-x:auto;min-width:0}
+table.mini{border-collapse:collapse;font-size:.78rem;width:100%;background:var(--surface);border-radius:8px}
+table.mini caption{caption-side:top;text-align:left;font-weight:600;font-size:.82rem;padding:0 0 6px;color:var(--ink)}
+table.mini th,table.mini td{padding:4px 5px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+table.mini tbody th{text-align:left;font-weight:500;color:var(--muted)}
+table.mini thead th{color:var(--muted);font-weight:600}
+td.p1{background:var(--p1)} td.p2{background:var(--p2)} td.p4{background:var(--p4)} td.p5{background:var(--p5)}
+.whats-on ul{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:.88rem}
+.hm{display:inline-block;min-width:5.5em;font-weight:600}
+.ht{display:inline-block;font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.ht.t2{background:var(--accent);color:var(--accent-ink)}
+.ht.t1{background:var(--q2);color:var(--ink)}
+.ht.tn{background:var(--p1);color:var(--ink)}
+.note{font-size:.8rem;color:var(--muted);margin-top:8px}
+
+/* explanation */
+.how,.sources{display:grid;gap:14px;max-width:72ch}
+.how dl{margin:0;display:grid;gap:12px}
+.how dt{font-weight:600}
+.how dd{margin:2px 0 0;color:var(--muted)}
+.sources ul{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--muted)}
+.asof{font-size:.85rem;color:var(--muted)}
+
+@media (max-width:860px){
+  .detail-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .page{padding-inline:16px;padding-block:28px 56px;gap:32px}
+  .controls{padding:16px}
+  .status{padding:10px 16px}
+  .axes{grid-template-columns:minmax(0,1fr)}
+  table.grid tbody th{min-width:128px}
+  .rbtn{padding:8px 10px}
+  .detail-body{padding:14px 16px 18px;max-width:calc(100vw - 32px)}
+}
+@media (prefers-reduced-motion: no-preference){
+  .preset,.seg span,.mbtn{transition:background-color .15s,color .15s}
+}
+
+</style>
+</head>
+<body>
+
+
+<div class="page">
+  <header class="intro">
+    <p class="kicker">Companion to the book by paaz</p>
+    <h1>Japan Month Planner</h1>
+    <p class="lede">Japan's best months change by region. Hokkaido is at its best in summer, Okinawa from winter into spring, and Mt. Fuji shows itself most clearly in winter. Tell the planner what matters to you, and it re-scores 11 regions for every month.</p>
+  </header>
+
+  <section class="planner" aria-labelledby="planner-h">
+    <div class="controls">
+      <div class="controls-head">
+        <h2 id="planner-h">What matters to you?</h2>
+        <div class="presets" role="group" aria-label="Quick starts"><span class="plabel">Quick start</span><button type="button" class="preset on" data-w="1,1,1,1,1">Balanced</button><button type="button" class="preset" data-w="1,0,1,2,1">Blossoms &amp; festivals</button><button type="button" class="preset" data-w="1,2,2,1,1">Quiet &amp; budget</button><button type="button" class="preset" data-w="2,1,1,1,2">Comfort &amp; safety</button></div>
+      </div>
+      <div class="axes"><fieldset class="axis"><legend>Pleasant weather</legend><div class="seg"><label><input type="radio" name="w0" id="w0-0" value="0"><span>Skip</span></label><label><input type="radio" name="w0" id="w0-1" value="1" checked><span>Normal</span></label><label><input type="radio" name="w0" id="w0-2" value="2"><span>Important</span></label></div></fieldset><fieldset class="axis"><legend>Fewer crowds</legend><div class="seg"><label><input type="radio" name="w1" id="w1-0" value="0"><span>Skip</span></label><label><input type="radio" name="w1" id="w1-1" value="1" checked><span>Normal</span></label><label><input type="radio" name="w1" id="w1-2" value="2"><span>Important</span></label></div></fieldset><fieldset class="axis"><legend>Lower cost</legend><div class="seg"><label><input type="radio" name="w2" id="w2-0" value="0"><span>Skip</span></label><label><input type="radio" name="w2" id="w2-1" value="1" checked><span>Normal</span></label><label><input type="radio" name="w2" id="w2-2" value="2"><span>Important</span></label></div></fieldset><fieldset class="axis"><legend>Things to see</legend><div class="seg"><label><input type="radio" name="w3" id="w3-0" value="0"><span>Skip</span></label><label><input type="radio" name="w3" id="w3-1" value="1" checked><span>Normal</span></label><label><input type="radio" name="w3" id="w3-2" value="2"><span>Important</span></label></div></fieldset><fieldset class="axis"><legend>Lower risk</legend><div class="seg"><label><input type="radio" name="w4" id="w4-0" value="0"><span>Skip</span></label><label><input type="radio" name="w4" id="w4-1" value="1" checked><span>Normal</span></label><label><input type="radio" name="w4" id="w4-2" value="2"><span>Important</span></label></div></fieldset></div>
+      <p class="hint">Skip leaves a factor out. Important counts it twice.</p>
+    </div>
+    <div class="status" aria-live="polite"><span id="status-text">Balanced: every factor counts the same.</span> <button type="button" id="clear-sort" class="linkbtn" hidden>Back to region order</button></div>
+    <div class="table-wrap">
+      <table class="grid" id="grid">
+        <caption>Weighted score from 1 to 5 (5 = best for your priorities). Darker cells fit better. An outline marks each region's best months, those within 0.2 of its top score. Select a month to rank the regions, or a region to see why it scores as it does.</caption>
+        <thead><tr><th scope="col" class="rcol">Region</th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="0" title="Rank regions for Jan">Jan</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="1" title="Rank regions for Feb">Feb</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="2" title="Rank regions for Mar">Mar</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="3" title="Rank regions for Apr">Apr</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="4" title="Rank regions for May">May</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="5" title="Rank regions for Jun">Jun</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="6" title="Rank regions for Jul">Jul</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="7" title="Rank regions for Aug">Aug</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="8" title="Rank regions for Sep">Sep</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="9" title="Rank regions for Oct">Oct</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="10" title="Rank regions for Nov">Nov</button></th><th scope="col" aria-sort="none"><button type="button" class="mbtn" data-m="11" title="Rank regions for Dec">Dec</button></th><th scope="col" class="best">Best months</th></tr></thead>
+        <tbody><tr class="region" data-r="tokyo"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-tokyo"><span class="rname">Tokyo</span><span class="rsub">Base city</span></button></th><td class="c q4">3.8</td><td class="c q4">3.8</td><td class="c q5 top">4.2</td><td class="c q4">3.8</td><td class="c q4 top">4.0</td><td class="c q4">3.6</td><td class="c q2">2.8</td><td class="c q1">2.2</td><td class="c q3">3.0</td><td class="c q3">3.4</td><td class="c q4">3.8</td><td class="c q4">3.6</td><td class="best">Mar · May</td></tr><tr class="detail" id="d-tokyo" data-r="tokyo" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p2">2</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Fewer crowds</th><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td></tr><tr><th scope="row">Lower cost</th><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p2">2</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p2">2</td><td class="p2">2</td><td class="p3">3</td></tr><tr><th scope="row">Things to see</th><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p4">4</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p1">1</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>11</td><td>12</td><td>17</td><td>21</td><td>24</td><td>28</td><td>32</td><td>33</td><td>30</td><td>23</td><td>18</td><td>13</td></tr><tr><th scope="row">Average high, °F</th><td>51</td><td>54</td><td>62</td><td>70</td><td>75</td><td>82</td><td>90</td><td>92</td><td>85</td><td>73</td><td>65</td><td>55</td></tr><tr><th scope="row">Rain, mm</th><td>60</td><td>56</td><td>116</td><td>134</td><td>140</td><td>168</td><td>156</td><td>155</td><td>225</td><td>235</td><td>96</td><td>58</td></tr><tr><th scope="row">Rain, inches</th><td>2.4</td><td>2.2</td><td>4.6</td><td>5.3</td><td>5.5</td><td>6.6</td><td>6.1</td><td>6.1</td><td>8.9</td><td>9.2</td><td>3.8</td><td>2.3</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-9%</td><td>-1%</td><td>+1%</td><td>+4%</td><td>+1%</td><td>-2%</td><td>-2%</td><td>-3%</td><td>-1%</td><td>+5%</td><td>+5%</td><td>+2%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>0.2</td><td>0.4</td><td>0.8</td><td>1.2</td><td>0.7</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Mar</span> <span class="ht t2">Headline</span> Cherry blossoms (first bloom Mar 24, full bloom Mar 31 on average)</li><li><span class="hm">Apr</span> <span class="ht t1">Also on</span> Late cherry blossoms; Nezu Shrine azaleas (Apr 1–30)</li><li><span class="hm">Jul</span> <span class="ht t1">Also on</span> Sumida River fireworks (last Saturday of July)</li><li><span class="hm">Nov</span> <span class="ht t1">Also on</span> Autumn leaves (maples turn around Nov 28)</li><li><span class="hm">Dec</span> <span class="ht t1">Also on</span> Autumn leaves into early December</li></ul>
+    <p class="note">Weather station: Tokyo. Hotel data: Tokyo Metropolis. Rainy season (tsuyu) on average Jun 7 – Jul 19.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="kyoto"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-kyoto"><span class="rname">Kyoto</span><span class="rsub">Base city</span></button></th><td class="c q4">3.8</td><td class="c q5 top">4.2</td><td class="c q4 top">4.0</td><td class="c q4">3.6</td><td class="c q3">3.4</td><td class="c q3">3.2</td><td class="c q3">3.0</td><td class="c q2">2.6</td><td class="c q2">2.8</td><td class="c q3">3.2</td><td class="c q4">3.6</td><td class="c q4">3.6</td><td class="best">Feb · Mar</td></tr><tr class="detail" id="d-kyoto" data-r="kyoto" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p2">2</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Fewer crowds</th><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p2">2</td><td class="p2">2</td><td class="p5">5</td><td class="p3">3</td><td class="p2">2</td><td class="p5">5</td><td class="p2">2</td><td class="p2">2</td><td class="p3">3</td></tr><tr><th scope="row">Lower cost</th><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p1">1</td><td class="p2">2</td><td class="p3">3</td><td class="p4">4</td><td class="p4">4</td><td class="p3">3</td><td class="p1">1</td><td class="p1">1</td><td class="p3">3</td></tr><tr><th scope="row">Things to see</th><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p2">2</td><td class="p2">2</td><td class="p2">2</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>10</td><td>11</td><td>16</td><td>22</td><td>25</td><td>29</td><td>34</td><td>35</td><td>32</td><td>24</td><td>18</td><td>12</td></tr><tr><th scope="row">Average high, °F</th><td>49</td><td>51</td><td>61</td><td>71</td><td>77</td><td>85</td><td>94</td><td>94</td><td>89</td><td>76</td><td>65</td><td>54</td></tr><tr><th scope="row">Rain, mm</th><td>53</td><td>65</td><td>106</td><td>117</td><td>151</td><td>200</td><td>224</td><td>154</td><td>178</td><td>143</td><td>74</td><td>57</td></tr><tr><th scope="row">Rain, inches</th><td>2.1</td><td>2.6</td><td>4.2</td><td>4.6</td><td>6.0</td><td>7.9</td><td>8.8</td><td>6.1</td><td>7.0</td><td>5.6</td><td>2.9</td><td>2.3</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-24%</td><td>-15%</td><td>+2%</td><td>+11%</td><td>+6%</td><td>-2%</td><td>-6%</td><td>-5%</td><td>+3%</td><td>+14%</td><td>+14%</td><td>+2%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>0.1</td><td>0.3</td><td>0.6</td><td>0.7</td><td>1.1</td><td>0.7</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Mar</span> <span class="ht t1">Also on</span> Cherry blossoms begin (first bloom Mar 26 on average)</li><li><span class="hm">Apr</span> <span class="ht t2">Headline</span> Cherry blossoms (full bloom Apr 4 on average)</li><li><span class="hm">May</span> <span class="ht t1">Also on</span> Aoi Festival (May 15)</li><li><span class="hm">Jul</span> <span class="ht t2">Headline</span> Gion Festival (float processions Jul 17 and Jul 24)</li><li><span class="hm">Aug</span> <span class="ht t1">Also on</span> Gozan Okuribi bonfires (Aug 16)</li><li><span class="hm">Oct</span> <span class="ht t1">Also on</span> Jidai Festival (Oct 22)</li><li><span class="hm">Nov</span> <span class="ht t2">Headline</span> Autumn leaves (peak mid-November to early December)</li><li><span class="hm">Dec</span> <span class="ht t1">Also on</span> Autumn leaves into early December</li></ul>
+    <p class="note">Weather station: Kyoto. Hotel data: Kyoto Prefecture. Rainy season (tsuyu) on average Jun 6 – Jul 19.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="osaka"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-osaka"><span class="rname">Osaka</span><span class="rsub">Base city</span></button></th><td class="c q4">4.0</td><td class="c q4">4.0</td><td class="c q4">4.0</td><td class="c q5 top">4.4</td><td class="c q4">4.0</td><td class="c q3">3.4</td><td class="c q2">2.6</td><td class="c q2">2.4</td><td class="c q2">2.8</td><td class="c q4">3.6</td><td class="c q4">3.8</td><td class="c q4">3.6</td><td class="best">Apr</td></tr><tr class="detail" id="d-osaka" data-r="osaka" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p2">2</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Fewer crowds</th><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p4">4</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td></tr><tr><th scope="row">Lower cost</th><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p2">2</td><td class="p2">2</td><td class="p3">3</td></tr><tr><th scope="row">Things to see</th><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p4">4</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p2">2</td><td class="p2">2</td><td class="p2">2</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>10</td><td>11</td><td>16</td><td>22</td><td>25</td><td>29</td><td>34</td><td>34</td><td>31</td><td>25</td><td>19</td><td>13</td></tr><tr><th scope="row">Average high, °F</th><td>50</td><td>52</td><td>61</td><td>71</td><td>76</td><td>84</td><td>92</td><td>94</td><td>89</td><td>77</td><td>66</td><td>55</td></tr><tr><th scope="row">Rain, mm</th><td>47</td><td>60</td><td>103</td><td>102</td><td>136</td><td>185</td><td>174</td><td>113</td><td>153</td><td>136</td><td>72</td><td>56</td></tr><tr><th scope="row">Rain, inches</th><td>1.9</td><td>2.4</td><td>4.1</td><td>4.0</td><td>5.4</td><td>7.3</td><td>6.9</td><td>4.4</td><td>6.0</td><td>5.4</td><td>2.9</td><td>2.2</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-11%</td><td>-5%</td><td>-2%</td><td>+4%</td><td>+2%</td><td>-1%</td><td>-2%</td><td>-0%</td><td>+3%</td><td>+9%</td><td>+5%</td><td>-1%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>0.1</td><td>0.3</td><td>0.6</td><td>0.7</td><td>1.1</td><td>0.7</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Mar</span> <span class="ht t1">Also on</span> Cherry blossoms begin (first bloom Mar 27 on average)</li><li><span class="hm">Apr</span> <span class="ht t2">Headline</span> Cherry blossoms (full bloom Apr 4 on average)</li><li><span class="hm">Jul</span> <span class="ht t1">Also on</span> Tenjin Festival (Jul 24–25)</li><li><span class="hm">Nov</span> <span class="ht t1">Also on</span> Autumn leaves (late November to early December)</li><li><span class="hm">Dec</span> <span class="ht t1">Also on</span> Autumn leaves into early December</li></ul>
+    <p class="note">Weather station: Osaka. Hotel data: Osaka Prefecture. Rainy season (tsuyu) on average Jun 6 – Jul 19.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="nara"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-nara"><span class="rname">Nara</span><span class="rsub">Add-on</span></button></th><td class="c q4">3.8</td><td class="c q5 top">4.2</td><td class="c q4">3.6</td><td class="c q4">3.6</td><td class="c q3">3.2</td><td class="c q3">3.4</td><td class="c q3">3.0</td><td class="c q2">2.4</td><td class="c q2">2.8</td><td class="c q3">3.2</td><td class="c q4">3.6</td><td class="c q4">3.6</td><td class="best">Feb</td></tr><tr class="detail" id="d-nara" data-r="nara" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p2">2</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p2">2</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Fewer crowds</th><td class="p3">3</td><td class="p5">5</td><td class="p3">3</td><td class="p2">2</td><td class="p2">2</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p5">5</td><td class="p3">3</td><td class="p2">2</td><td class="p4">4</td></tr><tr><th scope="row">Lower cost</th><td class="p5">5</td><td class="p5">5</td><td class="p2">2</td><td class="p1">1</td><td class="p1">1</td><td class="p3">3</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p1">1</td><td class="p1">1</td><td class="p3">3</td></tr><tr><th scope="row">Things to see</th><td class="p4">4</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p2">2</td><td class="p2">2</td><td class="p2">2</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>9</td><td>11</td><td>16</td><td>22</td><td>25</td><td>29</td><td>34</td><td>34</td><td>31</td><td>24</td><td>18</td><td>12</td></tr><tr><th scope="row">Average high, °F</th><td>49</td><td>51</td><td>61</td><td>71</td><td>77</td><td>84</td><td>92</td><td>93</td><td>88</td><td>75</td><td>65</td><td>54</td></tr><tr><th scope="row">Rain, mm</th><td>52</td><td>63</td><td>105</td><td>99</td><td>138</td><td>184</td><td>174</td><td>128</td><td>159</td><td>135</td><td>71</td><td>57</td></tr><tr><th scope="row">Rain, inches</th><td>2.1</td><td>2.5</td><td>4.1</td><td>3.9</td><td>5.5</td><td>7.2</td><td>6.8</td><td>5.0</td><td>6.3</td><td>5.3</td><td>2.8</td><td>2.2</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-26%</td><td>-16%</td><td>+5%</td><td>+11%</td><td>+11%</td><td>-4%</td><td>-10%</td><td>+1%</td><td>-3%</td><td>+15%</td><td>+18%</td><td>-3%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>0.1</td><td>0.3</td><td>0.6</td><td>0.7</td><td>1.1</td><td>0.7</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Jan</span> <span class="ht t1">Also on</span> Wakakusa Yamayaki hill burning (4th Saturday of January)</li><li><span class="hm">Mar</span> <span class="ht t1">Also on</span> Omizutori at Todaiji (Mar 1–14)</li><li><span class="hm">Apr</span> <span class="ht t2">Headline</span> Cherry blossoms (first bloom Mar 28, full bloom Apr 4 on average)</li><li><span class="hm">Nov</span> <span class="ht t2">Headline</span> Autumn leaves (maples turn around Nov 21)</li></ul>
+    <p class="note">Weather station: Nara. Hotel data: Nara Prefecture. Rainy season (tsuyu) on average Jun 6 – Jul 19.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="hakone"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-hakone"><span class="rname">Hakone</span><span class="rsub">Add-on</span></button></th><td class="c q4 top">3.8</td><td class="c q4 top">3.8</td><td class="c q2">2.8</td><td class="c q4 top">3.6</td><td class="c q4 top">3.6</td><td class="c q4 top">3.8</td><td class="c q4 top">3.6</td><td class="c q1">2.2</td><td class="c q3">3.2</td><td class="c q4 top">3.6</td><td class="c q3">3.4</td><td class="c q4 top">3.6</td><td class="best">Jan · Feb · Jun · Apr +4</td></tr><tr class="detail" id="d-hakone" data-r="hakone" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p2">2</td><td class="p2">2</td><td class="p2">2</td><td class="p2">2</td><td class="p3">3</td><td class="p2">2</td><td class="p1">1</td><td class="p1">1</td><td class="p2">2</td><td class="p3">3</td><td class="p4">4</td><td class="p3">3</td></tr><tr><th scope="row">Fewer crowds</th><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td><td class="p4">4</td><td class="p4">4</td><td class="p4">4</td><td class="p4">4</td><td class="p2">2</td><td class="p5">5</td><td class="p4">4</td><td class="p2">2</td><td class="p4">4</td></tr><tr><th scope="row">Lower cost</th><td class="p5">5</td><td class="p4">4</td><td class="p1">1</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p2">2</td><td class="p3">3</td><td class="p3">3</td><td class="p1">1</td><td class="p3">3</td></tr><tr><th scope="row">Things to see</th><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p3">3</td><td class="p4">4</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>8</td><td>10</td><td>14</td><td>18</td><td>21</td><td>24</td><td>29</td><td>30</td><td>27</td><td>20</td><td>16</td><td>11</td></tr><tr><th scope="row">Average high, °F</th><td>47</td><td>49</td><td>57</td><td>64</td><td>69</td><td>76</td><td>84</td><td>86</td><td>80</td><td>68</td><td>60</td><td>51</td></tr><tr><th scope="row">Rain, mm</th><td>128</td><td>151</td><td>285</td><td>322</td><td>327</td><td>420</td><td>425</td><td>346</td><td>449</td><td>404</td><td>197</td><td>108</td></tr><tr><th scope="row">Rain, inches</th><td>5.0</td><td>6.0</td><td>11.2</td><td>12.7</td><td>12.9</td><td>16.6</td><td>16.7</td><td>13.6</td><td>17.7</td><td>15.9</td><td>7.8</td><td>4.2</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-11%</td><td>-5%</td><td>+11%</td><td>+2%</td><td>+2%</td><td>-9%</td><td>-13%</td><td>+6%</td><td>-3%</td><td>+3%</td><td>+18%</td><td>-2%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>0.2</td><td>0.4</td><td>0.8</td><td>1.2</td><td>0.7</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Apr</span> <span class="ht t1">Also on</span> Cherry blossoms (early to mid-April, later than the coast)</li><li><span class="hm">Jun</span> <span class="ht t1">Also on</span> Hydrangeas along the Hakone Tozan Railway (mid-June to early July)</li><li><span class="hm">Jul</span> <span class="ht t1">Also on</span> Hydrangeas at the higher stations (early July)</li><li><span class="hm">Oct</span> <span class="ht t1">Also on</span> Autumn leaves begin (late October)</li><li><span class="hm">Nov</span> <span class="ht t2">Headline</span> Autumn leaves (late October to late November)</li></ul>
+    <p class="note">Weather station: Odawara, 3°C (5°F) cooler; rain at Hakone. Hotel data: Kanagawa Prefecture, ryokan. Rainy season (tsuyu) on average Jun 7 – Jul 19.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="fuji"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-fuji"><span class="rname">Mt. Fuji area</span><span class="rsub">Add-on</span></button></th><td class="c q5 top">4.2</td><td class="c q5 top">4.4</td><td class="c q4">4.0</td><td class="c q5 top">4.2</td><td class="c q4">4.0</td><td class="c q4">4.0</td><td class="c q1">2.0</td><td class="c q1">2.0</td><td class="c q3">3.0</td><td class="c q4">3.6</td><td class="c q4">3.8</td><td class="c q5 top">4.2</td><td class="best">Feb · Jan · Apr · Dec</td></tr><tr class="detail" id="d-fuji" data-r="fuji" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p2">2</td><td class="p2">2</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p1">1</td><td class="p2">2</td><td class="p3">3</td><td class="p4">4</td><td class="p4">4</td><td class="p2">2</td></tr><tr><th scope="row">Fewer crowds</th><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p5">5</td><td class="p1">1</td><td class="p1">1</td><td class="p4">4</td><td class="p4">4</td><td class="p3">3</td><td class="p4">4</td></tr><tr><th scope="row">Lower cost</th><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p1">1</td><td class="p1">1</td><td class="p2">2</td><td class="p2">2</td><td class="p2">2</td><td class="p5">5</td></tr><tr><th scope="row">Things to see</th><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p5">5</td><td class="p4">4</td><td class="p2">2</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>7</td><td>8</td><td>13</td><td>17</td><td>21</td><td>24</td><td>29</td><td>29</td><td>26</td><td>19</td><td>15</td><td>9</td></tr><tr><th scope="row">Average high, °F</th><td>44</td><td>46</td><td>55</td><td>63</td><td>69</td><td>76</td><td>85</td><td>85</td><td>78</td><td>66</td><td>59</td><td>49</td></tr><tr><th scope="row">Rain, mm</th><td>61</td><td>55</td><td>108</td><td>106</td><td>123</td><td>157</td><td>178</td><td>177</td><td>265</td><td>230</td><td>76</td><td>50</td></tr><tr><th scope="row">Rain, inches</th><td>2.4</td><td>2.2</td><td>4.2</td><td>4.2</td><td>4.9</td><td>6.2</td><td>7.0</td><td>7.0</td><td>10.4</td><td>9.1</td><td>3.0</td><td>2.0</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-30%</td><td>-21%</td><td>-7%</td><td>+3%</td><td>-0%</td><td>-10%</td><td>+14%</td><td>+40%</td><td>+6%</td><td>+8%</td><td>+10%</td><td>-12%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>0.2</td><td>0.4</td><td>0.8</td><td>1.2</td><td>0.7</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Dec–Feb</span> <span class="ht t2">Headline</span> Clearest views of Mt. Fuji</li><li><span class="hm">Apr</span> <span class="ht t2">Headline</span> Cherry blossoms (mid-April); Fuji Shibazakura Festival (mid-April to late May)</li><li><span class="hm">May</span> <span class="ht t1">Also on</span> Fuji Shibazakura Festival</li><li><span class="hm">Jun–Aug</span> <span class="ht tn">Off-season</span> Haze and clouds often hide the mountain</li><li><span class="hm">Jul–Aug</span> <span class="ht t1">Also on</span> Mt. Fuji climbing season (July to early September)</li><li><span class="hm">Oct</span> <span class="ht t1">Also on</span> Good views of Mt. Fuji</li><li><span class="hm">Nov</span> <span class="ht t2">Headline</span> Autumn leaves festival (all November)</li></ul>
+    <p class="note">Weather station: Kawaguchiko. Hotel data: Yamanashi Prefecture. Rainy season (tsuyu) on average Jun 7 – Jul 19.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="hiroshima"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-hiroshima"><span class="rname">Hiroshima &amp; Miyajima</span><span class="rsub">Add-on</span></button></th><td class="c q4 top">4.0</td><td class="c q5 top">4.2</td><td class="c q4 top">4.0</td><td class="c q4 top">4.0</td><td class="c q4">3.6</td><td class="c q4">3.6</td><td class="c q2">2.8</td><td class="c q1">1.8</td><td class="c q2">2.4</td><td class="c q3">3.2</td><td class="c q4">3.6</td><td class="c q4">3.8</td><td class="best">Feb · Jan · Mar · Apr</td></tr><tr class="detail" id="d-hiroshima" data-r="hiroshima" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Fewer crowds</th><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p4">4</td><td class="p1">1</td><td class="p4">4</td><td class="p3">3</td><td class="p2">2</td><td class="p4">4</td></tr><tr><th scope="row">Lower cost</th><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p2">2</td><td class="p2">2</td><td class="p4">4</td><td class="p3">3</td><td class="p2">2</td><td class="p2">2</td><td class="p1">1</td><td class="p1">1</td><td class="p4">4</td></tr><tr><th scope="row">Things to see</th><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p1">1</td><td class="p2">2</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>10</td><td>11</td><td>16</td><td>21</td><td>24</td><td>28</td><td>32</td><td>34</td><td>31</td><td>25</td><td>19</td><td>12</td></tr><tr><th scope="row">Average high, °F</th><td>51</td><td>52</td><td>61</td><td>70</td><td>76</td><td>82</td><td>90</td><td>92</td><td>88</td><td>77</td><td>66</td><td>54</td></tr><tr><th scope="row">Rain, mm</th><td>46</td><td>64</td><td>118</td><td>141</td><td>170</td><td>226</td><td>280</td><td>131</td><td>163</td><td>109</td><td>69</td><td>54</td></tr><tr><th scope="row">Rain, inches</th><td>1.8</td><td>2.5</td><td>4.7</td><td>5.6</td><td>6.7</td><td>8.9</td><td>11.0</td><td>5.2</td><td>6.4</td><td>4.3</td><td>2.7</td><td>2.1</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-23%</td><td>-12%</td><td>-0%</td><td>+5%</td><td>+4%</td><td>-5%</td><td>-2%</td><td>+4%</td><td>+6%</td><td>+14%</td><td>+14%</td><td>-5%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>0.1</td><td>0.2</td><td>0.6</td><td>0.8</td><td>1.1</td><td>0.3</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Mar</span> <span class="ht t1">Also on</span> Cherry blossoms begin (first bloom Mar 25 on average)</li><li><span class="hm">Apr</span> <span class="ht t2">Headline</span> Cherry blossoms (full bloom Apr 3 on average)</li><li><span class="hm">Aug</span> <span class="ht t1">Also on</span> Peace Memorial Ceremony (Aug 6)</li><li><span class="hm">Nov</span> <span class="ht t2">Headline</span> Autumn leaves on Miyajima (maples turn around Nov 22)</li></ul>
+    <p class="note">Weather station: Hiroshima. Hotel data: Hiroshima Prefecture. Rainy season (tsuyu) on average Jun 6 – Jul 19.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="kanazawa"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-kanazawa"><span class="rname">Kanazawa</span><span class="rsub">Add-on</span></button></th><td class="c q4">3.6</td><td class="c q4 top">4.0</td><td class="c q4 top">3.8</td><td class="c q4 top">4.0</td><td class="c q3">3.2</td><td class="c q4 top">3.8</td><td class="c q3">3.0</td><td class="c q1">2.2</td><td class="c q3">3.0</td><td class="c q3">3.2</td><td class="c q3">3.2</td><td class="c q3">3.4</td><td class="best">Feb · Apr · Mar · Jun</td></tr><tr class="detail" id="d-kanazawa" data-r="kanazawa" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p1">1</td><td class="p2">2</td><td class="p3">3</td><td class="p5">5</td><td class="p5">5</td><td class="p2">2</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p5">5</td><td class="p3">3</td><td class="p1">1</td></tr><tr><th scope="row">Fewer crowds</th><td class="p3">3</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p2">2</td><td class="p5">5</td><td class="p4">4</td><td class="p2">2</td><td class="p5">5</td><td class="p2">2</td><td class="p2">2</td><td class="p4">4</td></tr><tr><th scope="row">Lower cost</th><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p2">2</td><td class="p1">1</td><td class="p4">4</td><td class="p4">4</td><td class="p2">2</td><td class="p3">3</td><td class="p1">1</td><td class="p1">1</td><td class="p4">4</td></tr><tr><th scope="row">Things to see</th><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>8</td><td>8</td><td>14</td><td>19</td><td>23</td><td>27</td><td>32</td><td>33</td><td>30</td><td>23</td><td>17</td><td>11</td></tr><tr><th scope="row">Average high, °F</th><td>46</td><td>47</td><td>57</td><td>66</td><td>73</td><td>81</td><td>90</td><td>91</td><td>85</td><td>73</td><td>63</td><td>51</td></tr><tr><th scope="row">Rain, mm</th><td>256</td><td>163</td><td>157</td><td>144</td><td>138</td><td>170</td><td>233</td><td>179</td><td>232</td><td>177</td><td>251</td><td>301</td></tr><tr><th scope="row">Rain, inches</th><td>10.1</td><td>6.4</td><td>6.2</td><td>5.7</td><td>5.4</td><td>6.7</td><td>9.2</td><td>7.1</td><td>9.1</td><td>7.0</td><td>9.9</td><td>11.9</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-22%</td><td>-14%</td><td>-2%</td><td>+5%</td><td>+10%</td><td>-7%</td><td>-5%</td><td>+5%</td><td>+2%</td><td>+14%</td><td>+18%</td><td>-5%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>0.2</td><td>0.5</td><td>0.7</td><td>1.0</td><td>0.4</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Jan</span> <span class="ht t1">Also on</span> Shirakawa-go winter light-up (four Sundays, advance tickets)</li><li><span class="hm">Apr</span> <span class="ht t2">Headline</span> Cherry blossoms (first bloom Apr 3, full bloom Apr 8 on average); Takayama Spring Festival (Apr 14–15)</li><li><span class="hm">Oct</span> <span class="ht t1">Also on</span> Takayama Autumn Festival (Oct 9–10)</li><li><span class="hm">Nov</span> <span class="ht t2">Headline</span> Autumn leaves (maples turn around Nov 24)</li></ul>
+    <p class="note">Weather station: Kanazawa. Hotel data: Ishikawa Prefecture, 2025 only. Rainy season (tsuyu) on average Jun 11 – Jul 23.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="hokkaido"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-hokkaido"><span class="rname">Hokkaido</span><span class="rsub">Its own trip</span></button></th><td class="c q3">3.4</td><td class="c q3">3.0</td><td class="c q4">4.0</td><td class="c q4">4.0</td><td class="c q5 top">4.6</td><td class="c q4">4.0</td><td class="c q3">3.0</td><td class="c q2">2.6</td><td class="c q3">3.2</td><td class="c q4">3.8</td><td class="c q4">3.8</td><td class="c q3">3.0</td><td class="best">May</td></tr><tr class="detail" id="d-hokkaido" data-r="hokkaido" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p1">1</td><td class="p1">1</td><td class="p2">2</td><td class="p3">3</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p1">1</td></tr><tr><th scope="row">Fewer crowds</th><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p5">5</td><td class="p3">3</td><td class="p4">4</td><td class="p1">1</td><td class="p1">1</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Lower cost</th><td class="p4">4</td><td class="p2">2</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p2">2</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p2">2</td><td class="p4">4</td><td class="p3">3</td></tr><tr><th scope="row">Things to see</th><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p2">2</td><td class="p5">5</td><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p5">5</td><td class="p2">2</td><td class="p4">4</td></tr><tr><th scope="row">Lower risk</th><td class="p4">4</td><td class="p4">4</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>0</td><td>1</td><td>6</td><td>14</td><td>19</td><td>24</td><td>28</td><td>28</td><td>24</td><td>17</td><td>10</td><td>2</td></tr><tr><th scope="row">Average high, °F</th><td>32</td><td>35</td><td>44</td><td>57</td><td>67</td><td>75</td><td>83</td><td>83</td><td>76</td><td>63</td><td>50</td><td>35</td></tr><tr><th scope="row">Rain, mm</th><td>108</td><td>92</td><td>78</td><td>55</td><td>56</td><td>60</td><td>91</td><td>127</td><td>142</td><td>110</td><td>114</td><td>114</td></tr><tr><th scope="row">Rain, inches</th><td>4.3</td><td>3.6</td><td>3.1</td><td>2.1</td><td>2.2</td><td>2.4</td><td>3.6</td><td>5.0</td><td>5.6</td><td>4.3</td><td>4.5</td><td>4.5</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-6%</td><td>+6%</td><td>-13%</td><td>-26%</td><td>-11%</td><td>+7%</td><td>+17%</td><td>+16%</td><td>+13%</td><td>+7%</td><td>-9%</td><td>-2%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>0.1</td><td>0.2</td><td>0.7</td><td>0.7</td><td>0.2</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Jan</span> <span class="ht t2">Headline</span> Snow country and skiing (Niseko powder, late December to mid-February)</li><li><span class="hm">Feb</span> <span class="ht t2">Headline</span> Sapporo Snow Festival (Feb 4–11, 2027)</li><li><span class="hm">Mar</span> <span class="ht t1">Also on</span> Late ski season</li><li><span class="hm">Apr & Nov</span> <span class="ht tn">Off-season</span> Between seasons: snow melting or not yet settled</li><li><span class="hm">May</span> <span class="ht t2">Headline</span> Cherry blossoms (Sapporo full bloom May 6; Hakodate first bloom Apr 28 on average)</li><li><span class="hm">Jun</span> <span class="ht t1">Also on</span> Lavender begins (late June)</li><li><span class="hm">Jul</span> <span class="ht t2">Headline</span> Lavender peak (mid-July to early August); summer festivals</li><li><span class="hm">Aug</span> <span class="ht t1">Also on</span> Late lavender; summer festival (to Aug 18)</li><li><span class="hm">Oct</span> <span class="ht t2">Headline</span> Autumn leaves (Sapporo mid-October to early November)</li><li><span class="hm">Dec</span> <span class="ht t1">Also on</span> Ski season opens (Niseko from Nov 28)</li></ul>
+    <p class="note">Weather station: Sapporo. Hotel data: Hokkaido. No rainy season (tsuyu) in Hokkaido.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="okinawa"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-okinawa"><span class="rname">Okinawa</span><span class="rsub">Its own trip</span></button></th><td class="c q5 top">4.6</td><td class="c q5 top">4.4</td><td class="c q5">4.2</td><td class="c q5">4.2</td><td class="c q3">3.4</td><td class="c q4">3.6</td><td class="c q1">2.2</td><td class="c q1">1.8</td><td class="c q2">2.6</td><td class="c q2">2.8</td><td class="c q4">3.8</td><td class="c q5 top">4.4</td><td class="best">Jan · Feb · Dec</td></tr><tr class="detail" id="d-okinawa" data-r="okinawa" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p2">2</td><td class="p4">4</td><td class="p5">5</td></tr><tr><th scope="row">Fewer crowds</th><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p5">5</td><td class="p2">2</td><td class="p1">1</td><td class="p4">4</td><td class="p3">3</td><td class="p5">5</td><td class="p4">4</td></tr><tr><th scope="row">Lower cost</th><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p3">3</td><td class="p2">2</td><td class="p1">1</td><td class="p2">2</td><td class="p2">2</td><td class="p3">3</td><td class="p5">5</td></tr><tr><th scope="row">Things to see</th><td class="p4">4</td><td class="p4">4</td><td class="p3">3</td><td class="p4">4</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p4">4</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>20</td><td>21</td><td>23</td><td>25</td><td>27</td><td>30</td><td>32</td><td>32</td><td>32</td><td>29</td><td>26</td><td>22</td></tr><tr><th scope="row">Average high, °F</th><td>68</td><td>70</td><td>73</td><td>77</td><td>81</td><td>86</td><td>90</td><td>90</td><td>89</td><td>85</td><td>78</td><td>71</td></tr><tr><th scope="row">Rain, mm</th><td>102</td><td>114</td><td>143</td><td>161</td><td>245</td><td>284</td><td>188</td><td>240</td><td>275</td><td>179</td><td>119</td><td>110</td></tr><tr><th scope="row">Rain, inches</th><td>4.0</td><td>4.5</td><td>5.6</td><td>6.3</td><td>9.7</td><td>11.2</td><td>7.4</td><td>9.4</td><td>10.8</td><td>7.1</td><td>4.7</td><td>4.3</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-15%</td><td>+2%</td><td>-3%</td><td>-1%</td><td>-6%</td><td>-2%</td><td>+9%</td><td>+11%</td><td>+4%</td><td>+9%</td><td>+3%</td><td>-12%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>0.4</td><td>0.6</td><td>1.5</td><td>2.2</td><td>1.9</td><td>1.1</td><td>0.3</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Jan–Feb</span> <span class="ht t1">Also on</span> Hikanzakura cherry blossoms (Naha first bloom Jan 16, full bloom Feb 4 on average)</li><li><span class="hm">Apr–May</span> <span class="ht t1">Also on</span> Beach season (beaches open late March to early April)</li><li><span class="hm">Jun & Sep</span> <span class="ht t2">Headline</span> Best beach months</li><li><span class="hm">Jul–Aug</span> <span class="ht t2">Headline</span> Best beach months (summer peak season)</li><li><span class="hm">Oct</span> <span class="ht t1">Also on</span> Beach season (to late October); Naha Tug-of-War</li></ul>
+    <p class="note">Weather station: Naha. Hotel data: Okinawa Prefecture. Rainy season (tsuyu) on average May 10 – Jun 21.</p>
+  </div>
+</div></td></tr><tr class="region" data-r="kyushu"><th scope="row"><button type="button" class="rbtn" aria-expanded="false" aria-controls="d-kyushu"><span class="rname">Kyushu</span><span class="rsub">Its own trip</span></button></th><td class="c q4">3.8</td><td class="c q4">3.8</td><td class="c q5 top">4.2</td><td class="c q5 top">4.2</td><td class="c q4 top">4.0</td><td class="c q3">3.4</td><td class="c q2">2.4</td><td class="c q1">2.2</td><td class="c q2">2.8</td><td class="c q3">3.4</td><td class="c q4">3.8</td><td class="c q4">3.6</td><td class="best">Mar · Apr · May</td></tr><tr class="detail" id="d-kyushu" data-r="kyushu" hidden><td colspan="14"><div class="detail-body">
+  <div class="detail-grid">
+    <div class="dtable"><table class="mini"><caption>Scores by month (1–5, 5 = best)</caption><thead><tr><th scope="col">Score</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Pleasant weather</th><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p1">1</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td></tr><tr><th scope="row">Fewer crowds</th><td class="p4">4</td><td class="p4">4</td><td class="p4">4</td><td class="p4">4</td><td class="p4">4</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p5">5</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td></tr><tr><th scope="row">Lower cost</th><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p3">3</td><td class="p2">2</td><td class="p2">2</td><td class="p3">3</td></tr><tr><th scope="row">Things to see</th><td class="p3">3</td><td class="p4">4</td><td class="p5">5</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p3">3</td><td class="p3">3</td><td class="p4">4</td><td class="p4">4</td><td class="p4">4</td></tr><tr><th scope="row">Lower risk</th><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p5">5</td><td class="p4">4</td><td class="p1">1</td><td class="p1">1</td><td class="p2">2</td><td class="p4">4</td><td class="p5">5</td><td class="p5">5</td></tr></tbody></table></div>
+    <div class="dtable"><table class="mini basis"><caption>What the scores are based on</caption><thead><tr><th scope="col">Measure</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th></tr></thead><tbody><tr><th scope="row">Average high, °C</th><td>11</td><td>12</td><td>17</td><td>21</td><td>24</td><td>28</td><td>33</td><td>34</td><td>31</td><td>25</td><td>19</td><td>13</td></tr><tr><th scope="row">Average high, °F</th><td>51</td><td>54</td><td>63</td><td>70</td><td>76</td><td>83</td><td>92</td><td>92</td><td>88</td><td>77</td><td>67</td><td>55</td></tr><tr><th scope="row">Rain, mm</th><td>74</td><td>70</td><td>104</td><td>118</td><td>134</td><td>250</td><td>299</td><td>210</td><td>175</td><td>94</td><td>91</td><td>68</td></tr><tr><th scope="row">Rain, inches</th><td>2.9</td><td>2.7</td><td>4.1</td><td>4.7</td><td>5.3</td><td>9.8</td><td>11.8</td><td>8.3</td><td>6.9</td><td>3.7</td><td>3.6</td><td>2.7</td></tr><tr><th scope="row">Hotel demand vs. yearly average</th><td>-9%</td><td>+0%</td><td>+0%</td><td>-1%</td><td>-1%</td><td>-4%</td><td>-2%</td><td>+0%</td><td>-1%</td><td>+6%</td><td>+9%</td><td>+2%</td></tr><tr><th scope="row">Typhoons passing near (average)</th><td>–</td><td>–</td><td>–</td><td>–</td><td>0.1</td><td>0.3</td><td>0.8</td><td>1.1</td><td>1.1</td><td>0.4</td><td>–</td><td>–</td></tr></tbody></table></div>
+  </div>
+  <div class="whats-on">
+    <h4>Counted as things to see</h4>
+    <ul><li><span class="hm">Feb</span> <span class="ht t1">Also on</span> Nagasaki Lantern Festival (February)</li><li><span class="hm">Mar</span> <span class="ht t2">Headline</span> Cherry blossoms (Fukuoka first bloom Mar 22, full bloom Mar 31 on average)</li><li><span class="hm">Apr</span> <span class="ht t1">Also on</span> Late cherry blossoms</li><li><span class="hm">Jul</span> <span class="ht t1">Also on</span> Hakata Gion Yamakasa (Jul 1–15)</li><li><span class="hm">Oct</span> <span class="ht t1">Also on</span> Nagasaki Kunchi (Oct 7–9)</li><li><span class="hm">Nov</span> <span class="ht t1">Also on</span> Autumn leaves (Fukuoka maples turn around Dec 1)</li><li><span class="hm">Dec</span> <span class="ht t1">Also on</span> Autumn leaves into early December</li></ul>
+    <p class="note">Weather station: Fukuoka. Hotel data: Fukuoka Prefecture. Rainy season (tsuyu) on average Jun 4 – Jul 19.</p>
+  </div>
+</div></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="how" aria-labelledby="how-h">
+    <h2 id="how-h">How the scores work</h2>
+    <p>Every region gets a score from 1 to 5 on five factors for every month, where 5 is best for you. Your settings decide how much each factor counts, and the table shows the weighted average.</p>
+    <dl>
+      <dt>Pleasant weather</dt>
+      <dd>Average daily highs for 2021–2025 from the Japan Meteorological Agency (JMA). Highs of 18–25°C (64–77°F) score 5. The hotter or colder the month, the lower the score, down to 1 for highs of 31°C (88°F) and above or below 5°C (41°F). A month loses a point from 200 mm (8 in) of normal rainfall, two from 300 mm (12 in), and one more if at least 15 of its days fall in the rainy season (tsuyu).</dd>
+      <dt>Fewer crowds</dt>
+      <dd>Starts at 5. Japanese holidays take points off: New Year and the year-end, Golden Week in early May, the start of summer vacation in July, and Obon with summer vacation in August. So do months when hotels are fuller than the region's yearly average, and months with a headline draw such as cherry blossoms, autumn leaves or a major festival.</dd>
+      <dt>Lower cost</dt>
+      <dd>How full hotels are compared with the region's own yearly average (Japan Tourism Agency, 2024–2025). Months 10% or more above average score 1 and months 10% or more below score 5. This measures demand rather than room prices, and it compares months within a region. It does not say one region is cheaper than another.</dd>
+      <dt>Things to see</dt>
+      <dd>Starts at 3. A headline seasonal highlight adds 2 and a smaller one adds 1. Cherry blossom and autumn leaf dates are JMA averages, and festival dates come from organizers and tourism boards. Off-season months lose a point: the spring thaw and late autumn in Hokkaido, and the hazy summer when Mt. Fuji is often hidden. Open a region to see what is counted.</dd>
+      <dt>Lower risk</dt>
+      <dd>Starts at 5. Typhoons take off 1 to 3 points, depending on how many pass near the region in that month in an average year (JMA, 1991–2020). Heat takes off 1 point for average highs of 31°C (88°F) or more and 2 points for 33°C (91°F) or more. Snow on the ground of 30 cm (1 ft) or more takes off 1 point, and 1 m (3 ft) or more takes off 2.</dd>
+    </dl>
+    <p>Each region is scored at one weather station: Sapporo for Hokkaido, Fukuoka for Kyushu, Naha for Okinawa and Kawaguchiko for the Mt. Fuji area. Hakone has no temperature record, so its highs are set about 3°C (5°F) below Odawara at the foot of the mountains. Kanazawa uses 2025 hotel data only, because Ishikawa's 2024 figures were unusual after the January 2024 Noto earthquake.</p>
+    <p>The scores describe a typical year. Blossoms can come a week or more early or late, and heat and typhoons vary from year to year. Check forecasts and event dates before you book.</p>
+  </section>
+
+  <section class="sources" aria-labelledby="src-h">
+    <h2 id="src-h">Sources</h2>
+    <ul>
+      <li>Japan Meteorological Agency: <a href="https://www.data.jma.go.jp/stats/etrn/index.php">monthly values and 1991–2020 normals</a> (temperature, rainfall, snow depth), <a href="https://www.data.jma.go.jp/cpd/baiu/index.html">rainy season normals</a>, <a href="https://www.data.jma.go.jp/yoho/typhoon/statistics/average/average.html">typhoon approach normals</a>, <a href="https://www.data.jma.go.jp/sakura/data/index.html">cherry blossom and maple observations</a>.</li>
+      <li>Japan Tourism Agency: <a href="https://www.mlit.go.jp/kankocho/tokei_hakusyo/shukuhakutokei.html">Overnight Travel Statistics Survey</a>, hotel occupancy by prefecture and month, 2024–2025.</li>
+      <li>Festival and event dates: organizers and tourism boards, checked in September 2026.</li>
+    </ul>
+    <p class="asof">Data as of September 30, 2026.</p>
+  </section>
+</div>
+
+<script>
+const PLANNER = {"axes": ["Pleasant weather", "Fewer crowds", "Lower cost", "Things to see", "Lower risk"], "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "scores": {"tokyo": [[3, 3, 4, 5, 5, 2, 1, 1, 1, 4, 5, 3], [4, 5, 4, 3, 4, 5, 3, 3, 5, 4, 3, 3], [4, 3, 3, 2, 3, 3, 3, 3, 3, 2, 2, 3], [3, 3, 5, 4, 3, 3, 4, 3, 3, 3, 4, 4], [5, 5, 5, 5, 5, 5, 3, 1, 3, 4, 5, 5]], "kyoto": [[2, 3, 4, 5, 4, 1, 1, 1, 1, 5, 5, 3], [4, 5, 4, 2, 2, 5, 3, 2, 5, 2, 2, 3], [5, 5, 3, 1, 2, 3, 4, 4, 3, 1, 1, 3], [3, 3, 4, 5, 4, 3, 5, 4, 3, 4, 5, 4], [5, 5, 5, 5, 5, 4, 2, 2, 2, 4, 5, 5]], "osaka": [[3, 3, 4, 5, 5, 2, 1, 1, 1, 5, 5, 3], [4, 5, 4, 4, 4, 5, 3, 3, 5, 4, 3, 3], [5, 4, 3, 3, 3, 3, 3, 3, 3, 2, 2, 3], [3, 3, 4, 5, 3, 3, 4, 3, 3, 3, 4, 4], [5, 5, 5, 5, 5, 4, 2, 2, 2, 4, 5, 5]], "nara": [[2, 3, 4, 5, 5, 2, 1, 1, 1, 5, 5, 3], [3, 5, 3, 2, 2, 5, 4, 3, 5, 3, 2, 4], [5, 5, 2, 1, 1, 3, 5, 3, 3, 1, 1, 3], [4, 3, 4, 5, 3, 3, 3, 3, 3, 3, 5, 3], [5, 5, 5, 5, 5, 4, 2, 2, 2, 4, 5, 5]], "hakone": [[2, 2, 2, 2, 3, 2, 1, 1, 2, 3, 4, 3], [4, 5, 3, 4, 4, 4, 4, 2, 5, 4, 2, 4], [5, 4, 1, 3, 3, 4, 5, 2, 3, 3, 1, 3], [3, 3, 3, 4, 3, 4, 4, 3, 3, 4, 5, 3], [5, 5, 5, 5, 5, 5, 4, 3, 3, 4, 5, 5]], "fuji": [[2, 2, 3, 4, 5, 4, 1, 2, 3, 4, 4, 2], [4, 5, 5, 4, 3, 5, 1, 1, 4, 4, 3, 4], [5, 5, 4, 3, 3, 4, 1, 1, 2, 2, 2, 5], [5, 5, 3, 5, 4, 2, 3, 3, 3, 4, 5, 5], [5, 5, 5, 5, 5, 5, 4, 3, 3, 4, 5, 5]], "hiroshima": [[3, 3, 4, 5, 5, 1, 1, 1, 1, 5, 5, 3], [4, 5, 4, 3, 3, 5, 4, 1, 4, 3, 2, 4], [5, 5, 3, 2, 2, 4, 3, 2, 2, 1, 1, 4], [3, 3, 4, 5, 3, 3, 3, 4, 3, 3, 5, 3], [5, 5, 5, 5, 5, 5, 3, 1, 2, 4, 5, 5]], "kanazawa": [[1, 2, 3, 5, 5, 2, 1, 1, 1, 5, 3, 1], [3, 5, 5, 3, 2, 5, 4, 2, 5, 2, 2, 4], [5, 5, 3, 2, 1, 4, 4, 2, 3, 1, 1, 4], [4, 3, 3, 5, 3, 3, 3, 3, 3, 4, 5, 3], [5, 5, 5, 5, 5, 5, 3, 3, 3, 4, 5, 5]], "hokkaido": [[1, 1, 2, 3, 5, 5, 3, 3, 5, 4, 3, 1], [3, 3, 5, 5, 3, 4, 1, 1, 3, 3, 5, 3], [4, 2, 5, 5, 5, 2, 1, 1, 1, 2, 4, 3], [5, 5, 4, 2, 5, 4, 5, 4, 3, 5, 2, 4], [4, 4, 4, 5, 5, 5, 5, 4, 4, 5, 5, 4]], "okinawa": [[5, 5, 5, 4, 1, 1, 1, 1, 1, 2, 4, 5], [4, 5, 5, 5, 4, 5, 2, 1, 4, 3, 5, 4], [5, 3, 3, 3, 4, 3, 2, 1, 2, 2, 3, 5], [4, 4, 3, 4, 4, 5, 5, 5, 5, 4, 3, 3], [5, 5, 5, 5, 4, 4, 1, 1, 1, 3, 4, 5]], "kyushu": [[3, 3, 4, 5, 5, 1, 1, 1, 1, 4, 5, 3], [4, 4, 4, 4, 4, 5, 3, 3, 5, 3, 3, 3], [4, 3, 3, 3, 3, 4, 3, 3, 3, 2, 2, 3], [3, 4, 5, 4, 3, 3, 4, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 4, 1, 1, 2, 4, 5, 5]]}, "names": {"tokyo": "Tokyo", "kyoto": "Kyoto", "osaka": "Osaka", "nara": "Nara", "hakone": "Hakone", "fuji": "Mt. Fuji area", "hiroshima": "Hiroshima & Miyajima", "kanazawa": "Kanazawa", "hokkaido": "Hokkaido", "okinawa": "Okinawa", "kyushu": "Kyushu"}};
+(function(){
+  var P = PLANNER, KEY = 'japan-month-planner-v1';
+  var w = [1,1,1,1,1], sortM = null;
+  function valid(arr){ return Array.isArray(arr) && arr.length === 5 && arr.every(function(v){ return v === 0 || v === 1 || v === 2; }); }
+  try {
+    var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (s && valid(s.w)) w = s.w;
+    if (s && typeof s.m === 'number' && s.m >= 0 && s.m < 12) sortM = s.m;
+  } catch (e) {}
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify({ w: w, m: sortM })); } catch (e) {} }
+
+  var tbody = document.querySelector('#grid tbody');
+  var regionRows = Array.prototype.slice.call(tbody.querySelectorAll('tr.region'));
+  var order = regionRows.map(function(r){ return r.dataset.r; });
+  var monthHeads = Array.prototype.slice.call(document.querySelectorAll('#grid thead th[aria-sort]'));
+
+  function total(){ return w.reduce(function(a, b){ return a + b; }, 0); }
+  function averages(k){
+    var sc = P.scores[k], tw = total(), out = [];
+    if (!tw) return null;
+    for (var m = 0; m < 12; m++){
+      var s = 0;
+      for (var a = 0; a < 5; a++) s += w[a] * sc[a][m];
+      out.push(s / tw);
+    }
+    return out;
+  }
+
+  function render(){
+    var vals = {}, all = [];
+    order.forEach(function(k){ vals[k] = averages(k); if (vals[k]) all = all.concat(vals[k]); });
+    var lo = all.length ? Math.min.apply(null, all) : 0, hi = all.length ? Math.max.apply(null, all) : 0;
+
+    regionRows.forEach(function(tr){
+      var v = vals[tr.dataset.r], cells = tr.querySelectorAll('td.c'), best = tr.querySelector('td.best');
+      if (!v){
+        Array.prototype.forEach.call(cells, function(td){ td.textContent = '–'; td.className = 'c'; });
+        best.textContent = '–';
+        return;
+      }
+      var cut = Math.max.apply(null, v) - 0.2 - 1e-9;
+      Array.prototype.forEach.call(cells, function(td, m){
+        var q = hi === lo ? 3 : Math.min(5, 1 + Math.floor((v[m] - lo) / (hi - lo) * 5));
+        td.textContent = v[m].toFixed(1);
+        td.className = 'c q' + q + (v[m] >= cut ? ' top' : '');
+      });
+      var idx = v.map(function(x, m){ return m; }).filter(function(m){ return v[m] >= cut; })
+                 .sort(function(a, b){ return (v[b] - v[a]) || (a - b); });
+      best.textContent = idx.slice(0, 4).map(function(m){ return P.months[m]; }).join(' · ') + (idx.length > 4 ? ' +' + (idx.length - 4) : '');
+    });
+
+    var keys = order.slice();
+    if (sortM !== null && all.length){
+      keys.sort(function(a, b){ return (vals[b][sortM] - vals[a][sortM]) || (order.indexOf(a) - order.indexOf(b)); });
+    }
+    keys.forEach(function(k){
+      tbody.appendChild(tbody.querySelector('tr.region[data-r="' + k + '"]'));
+      tbody.appendChild(document.getElementById('d-' + k));
+    });
+    monthHeads.forEach(function(th, m){
+      th.setAttribute('aria-sort', m === sortM ? 'descending' : 'none');
+      th.classList.toggle('sorted', m === sortM);
+    });
+    document.getElementById('clear-sort').hidden = sortM === null;
+
+    var status = document.getElementById('status-text');
+    if (!total()){
+      status.textContent = 'Choose at least one factor to see scores.';
+    } else {
+      var imp = P.axes.filter(function(a, i){ return w[i] === 2; });
+      var skip = P.axes.filter(function(a, i){ return w[i] === 0; });
+      var parts = [];
+      if (imp.length) parts.push('Important: ' + imp.join(', ') + '.');
+      if (skip.length) parts.push('Skipped: ' + skip.join(', ') + '.');
+      var text = parts.length ? parts.join(' ') : 'Balanced: every factor counts the same.';
+      if (sortM !== null) text += ' Regions ranked for ' + P.months[sortM] + '.';
+      status.textContent = text;
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.preset'), function(b){ b.classList.toggle('on', b.dataset.w === w.join(',')); });
+    for (var a = 0; a < 5; a++){ var r = document.getElementById('w' + a + '-' + w[a]); if (r) r.checked = true; }
+    save();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.axis input'), function(inp){
+    inp.addEventListener('change', function(){ w[Number(this.name.slice(1))] = Number(this.value); render(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.preset'), function(b){
+    b.addEventListener('click', function(){ w = this.dataset.w.split(',').map(Number); render(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.mbtn'), function(b){
+    b.addEventListener('click', function(){ var m = Number(this.dataset.m); sortM = sortM === m ? null : m; render(); });
+  });
+  document.getElementById('clear-sort').addEventListener('click', function(){ sortM = null; render(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.rbtn'), function(b){
+    b.addEventListener('click', function(){
+      var d = document.getElementById(this.getAttribute('aria-controls')), open = d.hidden;
+      d.hidden = !open;
+      this.setAttribute('aria-expanded', String(open));
+      this.closest('tr').classList.toggle('open', open);
+    });
+  });
+  render();
+})();
+
+</script>
+</body>
+</html>
